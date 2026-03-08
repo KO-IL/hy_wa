@@ -13,7 +13,7 @@ Linux 壁纸管理器，支持图片和 Wallpaper Engine 视频/项目。
 ## 依赖
 
 - **swww** - Wayland 动态壁纸守护进程（用于图片）
-- **Wallpaper Engine for Linux**（可选）- 用于视频和项目
+- **Wallpaper Engine for Linux** ([Almamu](https://github.com/Almamu/linux-wallpaperengine)) - 用于视频和项目
 - Rust 工具链
 
 ## 安装
