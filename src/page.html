@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>wall-set</title>
+  <style>
+    :root {
+      --bg: #101418;
+      --panel: #1a222b;
+      --text: #dce3ea;
+      --muted: #92a0ad;
+      --accent: #62d6a8;
+      --border: #2a3642;
+      --danger: #e87d7d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 20% 0%, #1e2a35, var(--bg));
+      color: var(--text);
+      font-family: "Noto Sans", "DejaVu Sans", sans-serif;
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    .sub { color: var(--muted); margin-bottom: 16px; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--panel) 92%, black);
+    }
+    .toolbar input {
+      background: #0f151b;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      min-width: 160px;
+    }
+    .toolbar button {
+      background: #1f2a34;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    .toolbar button:hover { border-color: var(--accent); }
+    #status { margin: 12px 0; color: var(--muted); min-height: 24px; }
+    #status.error { color: var(--danger); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      all: unset;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--panel);
+      display: block;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
+    .thumb {
+      width: 100%;
+      height: 132px;
+      object-fit: cover;
+      display: block;
+      background: #0f151b;
+    }
+    .video {
+      width: 100%;
+      height: 132px;
+      display: grid;
+      place-items: center;
+      color: #0f151b;
+      background: linear-gradient(135deg, #5cc7e8, #62d6a8);
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .meta { padding: 10px; }
+    .name {
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .path {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 6px;
+      max-height: 32px;
+      overflow: hidden;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>wall-set GUI</h1>
+    <div id="root" class="sub">scan root: ...</div>
+    <div class="toolbar">
+      <label>Root:</label>
+      <input id="scan-root" type="text" placeholder="/path/to/wallpapers" />
+      <button id="save-root">Save Root</button>
+      <label>Output:</label>
+      <input id="output" type="text" placeholder="DP-3" />
+      <button id="save-output">Save Output</button>
+      <button id="refresh">Rescan Directory</button>
+    </div>
+    <div id="status"></div>
+    <div id="grid" class="grid"></div>
+  </div>
+  <script>
+    let appState = null;
+
+    function setStatus(message, isError = false) {
+      const node = document.getElementById("status");
+      node.textContent = message;
+      node.className = isError ? "error" : "";
+    }
+
+    function escapeHtml(input) {
+      return input
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    async function fetchText(url) {
+      const res = await fetch(url);
+      const text = await res.text();
+      if (!res.ok) throw new Error(text || res.statusText);
+      return text;
+    }
+
+    async function fetchJson(url) {
+      const res = await fetch(url);
+      const text = await res.text();
+      if (!res.ok) throw new Error(text || res.statusText);
+      return JSON.parse(text);
+    }
+
+    function render() {
+      if (!appState) return;
+      document.getElementById("root").textContent = "scan root: " + appState.root;
+      document.getElementById("scan-root").value = appState.root || "";
+      document.getElementById("output").value = appState.output || "";
+      const grid = document.getElementById("grid");
+      if (!appState.items.length) {
+        grid.innerHTML = "<div>No wallpapers found in this directory tree.</div>";
+        return;
+      }
+      grid.innerHTML = appState.items.map((item) => {
+        const selected = appState.last === item.path ? " selected" : "";
+        const thumb = item.thumb
+          ? `<img class="thumb" loading="lazy" src="/api/file?path=${encodeURIComponent(item.thumb)}" alt="${escapeHtml(item.name)}">`
+          : `<div class="video">${item.kind === "project" ? "PROJECT" : "VIDEO"}</div>`;
+        return `<button class="card${selected}" data-path="${encodeURIComponent(item.path)}">
+          ${thumb}
+          <div class="meta">
+            <div class="name">${escapeHtml(item.name)}</div>
+            <div class="path">${escapeHtml(item.path)}</div>
+          </div>
+        </button>`;
+      }).join("");
+      for (const button of document.querySelectorAll(".card")) {
+        button.addEventListener("click", async () => {
+          const path = decodeURIComponent(button.dataset.path);
+          try {
+            setStatus("Applying wallpaper...");
+            const message = await fetchText("/api/apply?path=" + encodeURIComponent(path));
+            setStatus(message);
+            await loadList();
+          } catch (err) {
+            setStatus(String(err), true);
+          }
+        });
+      }
+    }
+
+    async function loadList() {
+      appState = await fetchJson("/api/list");
+      render();
+    }
+
+    async function refreshList() {
+      await fetchText("/api/refresh");
+      await loadList();
+      setStatus("Directory rescan complete.");
+    }
+
+    async function saveOutput() {
+      const value = document.getElementById("output").value.trim();
+      if (!value) {
+        setStatus("Output is required.", true);
+        return;
+      }
+      const message = await fetchText("/api/set_output?output=" + encodeURIComponent(value));
+      setStatus(message);
+      await loadList();
+    }
+
+    async function saveRoot() {
+      const value = document.getElementById("scan-root").value.trim();
+      if (!value) {
+        setStatus("Root directory is required.", true);
+        return;
+      }
+      const message = await fetchText("/api/set_root?root=" + encodeURIComponent(value));
+      setStatus(message);
+      await loadList();
+    }
+
+    document.getElementById("refresh").addEventListener("click", () => {
+      refreshList().catch((err) => setStatus(String(err), true));
+    });
+    document.getElementById("save-root").addEventListener("click", () => {
+      saveRoot().catch((err) => setStatus(String(err), true));
+    });
+    document.getElementById("save-output").addEventListener("click", () => {
+      saveOutput().catch((err) => setStatus(String(err), true));
+    });
+    loadList().then(() => setStatus("Click a card to switch wallpaper.")).catch((err) => setStatus(String(err), true));
+  </script>
+</body>
+</html>

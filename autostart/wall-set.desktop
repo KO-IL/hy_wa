@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=wall-set
+Comment=Start Wallpaper Engine on login
+Exec=/home/wang/hw/wall-set/autostart/start-wallpaper-engine.sh
+Path=/home/wang/hw/wall-set/autostart
+Terminal=false
+X-GNOME-Autostart-enabled=true
