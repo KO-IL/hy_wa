@@ -5,6 +5,8 @@ Linux 壁纸管理器，支持图片和 Wallpaper Engine 视频/项目。
 ## 功能
 
 - Web GUI 界面浏览和切换壁纸
+- ![Uploading 图片.png…]()
+
 - 支持图片壁纸（通过 [swww](https://github.com/HikariLly/swww)）
 - 支持 Wallpaper Engine 项目和视频
 - 命令行直接应用壁纸
