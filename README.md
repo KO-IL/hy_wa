@@ -1,5 +1,7 @@
 # wall-set
 
+![Screenshot](screenshot.png)
+
 Linux 壁纸管理器，支持图片和 Wallpaper Engine 视频/项目。
 
 ## 功能
