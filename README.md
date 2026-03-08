@@ -33,7 +33,7 @@ Run the web interface:
 wall-set
 ```
 
-Access the GUI at http://localhost:18919
+Access the GUI at http://localhost:7878
 
 ### Command Line Mode
 
