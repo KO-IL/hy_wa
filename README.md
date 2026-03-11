@@ -72,6 +72,15 @@ last=/path/to/last/wallpaper
 cp autostart/wall-set.desktop ~/.config/autostart/
 ```
 
+## 代码结构
+
+- `src/main.rs` - 程序入口和参数解析
+- `src/app/` - 配置/状态与业务操作
+- `src/fs/` - 路径规范化与扫描
+- `src/engine/` - swww/Wallpaper Engine 启动与控制
+- `src/gui/` - 内置 Web GUI（包含 `page.html`）
+- `src/util/` - 小工具（JSON/URL 编解码等）
+
 ## 支持的格式
 
 - 图片：jpg, jpeg, png, bmp, gif, webp

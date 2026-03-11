@@ -1,12 +1,22 @@
+#[path = "app/config.rs"]
 mod config;
+#[path = "app/constants.rs"]
 mod constants;
+#[path = "app/instance.rs"]
 mod instance;
+#[path = "app/model.rs"]
 mod model;
+#[path = "fs/paths.rs"]
 mod paths;
+#[path = "fs/scanner.rs"]
 mod scanner;
+#[path = "app/state_ops.rs"]
 mod state_ops;
+#[path = "util/text.rs"]
 mod text;
+#[path = "engine/wallpaper.rs"]
 mod wallpaper;
+#[path = "gui/web.rs"]
 mod web;
 
 use std::env;

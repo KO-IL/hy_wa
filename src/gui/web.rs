@@ -10,13 +10,15 @@ use std::{
 
 use crate::{
     config::save_settings,
-    constants::{DEFAULT_OUTPUT, PAGE_HTML, SERVER_ADDR},
+    constants::{DEFAULT_OUTPUT, SERVER_ADDR},
     model::AppState,
     paths::canonicalize_directory,
     scanner::{resolve_allowed_media_path, scan_wallpapers},
     state_ops::apply_and_save,
     text::{json_escape, url_decode},
 };
+
+const PAGE_HTML: &str = include_str!("page.html");
 
 pub fn run_gui_server(state: AppState) -> std::io::Result<()> {
     let listener = TcpListener::bind(SERVER_ADDR)?;
