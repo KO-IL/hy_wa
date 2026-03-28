@@ -19,7 +19,7 @@ mod wallpaper;
 #[path = "gui/web.rs"]
 mod web;
 
-use std::env;
+use std::{env, thread, time::Duration};
 
 use config::load_settings;
 use constants::{DEFAULT_ENGINE_BIN, DEFAULT_OUTPUT};
@@ -84,7 +84,29 @@ fn main() {
         }
     };
 
-    if let Err(err) = run_gui_server(state) {
+    let shared = std::sync::Arc::new(std::sync::Mutex::new(state));
+
+    {
+        let mut guard = shared.lock().unwrap();
+        restore_last_wallpaper(&mut guard);
+    }
+
+    let shared_for_bg = std::sync::Arc::clone(&shared);
+    thread::spawn(move || {
+        const SCAN_INTERVAL: Duration = Duration::from_secs(10);
+        loop {
+            thread::sleep(SCAN_INTERVAL);
+            let root = {
+                let guard = shared_for_bg.lock().unwrap();
+                guard.root.clone()
+            };
+            let wallpapers = scan_wallpapers(&root);
+            let mut guard = shared_for_bg.lock().unwrap();
+            guard.wallpapers = wallpapers;
+        }
+    });
+
+    if let Err(err) = run_gui_server(shared) {
         eprintln!("Failed to start GUI server: {err}");
         std::process::exit(1);
     }

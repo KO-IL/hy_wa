@@ -17,9 +17,28 @@
     * { box-sizing: border-box; }
     body {
       margin: 0;
+      min-height: 100vh;
+      position: relative;
       background: radial-gradient(circle at 20% 0%, #1e2a35, var(--bg));
       color: var(--text);
       font-family: "Noto Sans", "DejaVu Sans", sans-serif;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 80% 20%, rgba(98, 214, 168, 0.25), transparent 45%),
+        radial-gradient(circle at 10% 30%, rgba(92, 199, 232, 0.18), transparent 30%);
+      pointer-events: none;
+      z-index: -2;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.6));
+      pointer-events: none;
+      z-index: -1;
     }
     .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
     h1 { margin: 0 0 8px; font-size: 24px; }
@@ -51,12 +70,84 @@
       cursor: pointer;
     }
     .toolbar button:hover { border-color: var(--accent); }
+    .toolbar button:active { background: #2a3642; }
+    .scan-meta {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: color-mix(in srgb, var(--panel) 90%, #0b1117);
+      font-size: 13px;
+      gap: 8px;
+    }
+    .scan-meta .count {
+      font-weight: 600;
+      color: var(--text);
+    }
+    .scan-meta span {
+      color: var(--muted);
+    }
+    .volume-control { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .volume-control label { color: var(--muted); font-size: 13px; }
+    .volume-slider {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      width: 100px;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      outline: none;
+    }
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .volume-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+    .volume-value { color: var(--text); font-size: 13px; min-width: 36px; }
+    .vol-btn {
+      background: #1f2a34;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      width: 28px;
+      height: 28px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+    }
+    .vol-btn:hover { border-color: var(--accent); }
     #status { margin: 12px 0; color: var(--muted); min-height: 24px; }
     #status.error { color: var(--danger); }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 12px;
+      position: relative;
+      z-index: 0;
+    }
+    .grid::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 30% 20%, rgba(98, 214, 168, 0.15), transparent 40%),
+        radial-gradient(circle at 80% 70%, rgba(92, 199, 232, 0.08), transparent 35%);
+      pointer-events: none;
+      z-index: -1;
     }
     .card {
       all: unset;
@@ -66,15 +157,38 @@
       overflow: hidden;
       background: var(--panel);
       display: block;
+      position: relative;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.3s ease;
     }
-    .card:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 14px 35px rgba(8, 12, 21, 0.5); }
     .card.selected { border-color: var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
     .thumb {
       width: 100%;
-      height: 132px;
+      height: 100%;
       object-fit: cover;
       display: block;
+    }
+    .thumb-wrap {
+      position: relative;
+      width: 100%;
+      height: 132px;
+      overflow: hidden;
+      border-radius: 12px 12px 0 0;
       background: #0f151b;
+    }
+    .kind-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text);
+      background: rgba(0, 0, 0, 0.36);
+      backdrop-filter: blur(6px);
     }
     .video {
       width: 100%;
@@ -85,6 +199,7 @@
       background: linear-gradient(135deg, #5cc7e8, #62d6a8);
       font-weight: 700;
       letter-spacing: 1px;
+      position: relative;
     }
     .meta { padding: 10px; }
     .name {
@@ -104,133 +219,262 @@
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>wall-set GUI</h1>
-    <div id="root" class="sub">scan root: ...</div>
-    <div class="toolbar">
-      <label>Root:</label>
-      <input id="scan-root" type="text" placeholder="/path/to/wallpapers" />
-      <button id="save-root">Save Root</button>
-      <label>Output:</label>
-      <input id="output" type="text" placeholder="DP-3" />
-      <button id="save-output">Save Output</button>
-      <button id="refresh">Rescan Directory</button>
-    </div>
-    <div id="status"></div>
-    <div id="grid" class="grid"></div>
-  </div>
-  <script>
-    let appState = null;
+  <div id="app"></div>
+  <script type="module">
+    import { createApp, ref, computed, onMounted, onUnmounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js'
 
-    function setStatus(message, isError = false) {
-      const node = document.getElementById("status");
-      node.textContent = message;
-      node.className = isError ? "error" : "";
-    }
+    const AUTO_REFRESH_INTERVAL = 15000
+    const timeFormatter = new Intl.DateTimeFormat(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
 
-    function escapeHtml(input) {
-      return input
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;");
-    }
+    const App = {
+      setup() {
+        const appState = ref(null)
+        const lastRefreshTime = ref(null)
+        const statusMessage = ref('')
+        const statusIsError = ref(false)
+        const scanRoot = ref('')
+        const output = ref('')
+        const volume = ref(100)
+        let refreshTimer = null
 
-    async function fetchText(url) {
-      const res = await fetch(url);
-      const text = await res.text();
-      if (!res.ok) throw new Error(text || res.statusText);
-      return text;
-    }
+        function setStatus(message, isError = false) {
+          statusMessage.value = message
+          statusIsError.value = isError
+        }
 
-    async function fetchJson(url) {
-      const res = await fetch(url);
-      const text = await res.text();
-      if (!res.ok) throw new Error(text || res.statusText);
-      return JSON.parse(text);
-    }
+        function escapeHtml(input) {
+          return input
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+        }
 
-    function render() {
-      if (!appState) return;
-      document.getElementById("root").textContent = "scan root: " + appState.root;
-      document.getElementById("scan-root").value = appState.root || "";
-      document.getElementById("output").value = appState.output || "";
-      const grid = document.getElementById("grid");
-      if (!appState.items.length) {
-        grid.innerHTML = "<div>No wallpapers found in this directory tree.</div>";
-        return;
-      }
-      grid.innerHTML = appState.items.map((item) => {
-        const selected = appState.last === item.path ? " selected" : "";
-        const thumb = item.thumb
-          ? `<img class="thumb" loading="lazy" src="/api/file?path=${encodeURIComponent(item.thumb)}" alt="${escapeHtml(item.name)}">`
-          : `<div class="video">${item.kind === "project" ? "PROJECT" : "VIDEO"}</div>`;
-        return `<button class="card${selected}" data-path="${encodeURIComponent(item.path)}">
-          ${thumb}
-          <div class="meta">
-            <div class="name">${escapeHtml(item.name)}</div>
-            <div class="path">${escapeHtml(item.path)}</div>
-          </div>
-        </button>`;
-      }).join("");
-      for (const button of document.querySelectorAll(".card")) {
-        button.addEventListener("click", async () => {
-          const path = decodeURIComponent(button.dataset.path);
-          try {
-            setStatus("Applying wallpaper...");
-            const message = await fetchText("/api/apply?path=" + encodeURIComponent(path));
-            setStatus(message);
-            await loadList();
-          } catch (err) {
-            setStatus(String(err), true);
+        async function fetchText(url) {
+          const res = await fetch(url)
+          const text = await res.text()
+          if (!res.ok) throw new Error(text || res.statusText)
+          return text
+        }
+
+        async function fetchJson(url) {
+          const res = await fetch(url)
+          const text = await res.text()
+          if (!res.ok) throw new Error(text || res.statusText)
+          return JSON.parse(text)
+        }
+
+        const wallpaperCount = computed(() => {
+          if (!appState.value) return 0
+          return appState.value.items.length
+        })
+
+        const scanMetaText = computed(() => {
+          const count = wallpaperCount.value
+          return `${count} wallpaper${count === 1 ? "" : "s"}`
+        })
+
+        const updateTimeText = computed(() => {
+          if (!lastRefreshTime.value) return "Updated just now"
+          return `Updated ${timeFormatter.format(lastRefreshTime.value)}`
+        })
+
+        async function loadList() {
+          appState.value = await fetchJson("/api/list")
+          lastRefreshTime.value = new Date()
+          scanRoot.value = appState.value.root || ''
+          output.value = appState.value.output || ''
+        }
+
+        async function refreshList({ quiet = false } = {}) {
+          await fetchText("/api/refresh")
+          await loadList()
+          if (!quiet) {
+            setStatus("Directory rescan complete.")
           }
-        });
-      }
+        }
+
+        async function applyWallpaper(path) {
+          try {
+            setStatus("Applying wallpaper...")
+            const message = await fetchText("/api/apply?path=" + encodeURIComponent(path))
+            setStatus(message)
+            await loadList()
+          } catch (err) {
+            setStatus(String(err), true)
+          }
+        }
+
+        async function saveOutput() {
+          const value = output.value.trim()
+          if (!value) {
+            setStatus("Output is required.", true)
+            return
+          }
+          try {
+            const message = await fetchText("/api/set_output?output=" + encodeURIComponent(value))
+            setStatus(message)
+            await loadList()
+          } catch (err) {
+            setStatus(String(err), true)
+          }
+        }
+
+        async function saveRoot() {
+          const value = scanRoot.value.trim()
+          if (!value) {
+            setStatus("Root directory is required.", true)
+            return
+          }
+          try {
+            const message = await fetchText("/api/set_root?root=" + encodeURIComponent(value))
+            setStatus(message)
+            await loadList()
+          } catch (err) {
+            setStatus(String(err), true)
+          }
+        }
+
+        async function loadVolume() {
+          try {
+            const data = await fetchJson("/api/volume")
+            volume.value = data.volume
+          } catch (err) {
+            console.error("Failed to load volume:", err)
+          }
+        }
+
+        async function setVolume(vol) {
+          try {
+            await fetchText("/api/volume?volume=" + vol)
+            volume.value = vol
+          } catch (err) {
+            setStatus(String(err), true)
+          }
+        }
+
+        function onVolumeInput(e) {
+          volume.value = parseInt(e.target.value)
+        }
+
+        function onVolumeChange(e) {
+          setVolume(parseInt(e.target.value))
+        }
+
+        function volUp() {
+          const newVol = Math.min(500, volume.value + 25)
+          volume.value = newVol
+          setVolume(newVol)
+        }
+
+        function volDown() {
+          const newVol = Math.max(0, volume.value - 25)
+          volume.value = newVol
+          setVolume(newVol)
+        }
+
+        function getKindLabel(kind) {
+          if (kind === "project") return "Project"
+          if (kind === "video") return "Video"
+          return "Image"
+        }
+
+        function thumbUrl(thumb) {
+          return "/api/file?path=" + encodeURIComponent(thumb)
+        }
+
+        onMounted(async () => {
+          try {
+            await loadList()
+            setStatus("Click a card to switch wallpaper.")
+          } catch (err) {
+            setStatus(String(err), true)
+          }
+          await loadVolume()
+          refreshTimer = setInterval(() => refreshList({ quiet: true }).catch(() => {}), AUTO_REFRESH_INTERVAL)
+        })
+
+        onUnmounted(() => {
+          if (refreshTimer) clearInterval(refreshTimer)
+        })
+
+        return {
+          appState,
+          statusMessage,
+          statusIsError,
+          scanRoot,
+          output,
+          volume,
+          wallpaperCount,
+          scanMetaText,
+          updateTimeText,
+          escapeHtml,
+          applyWallpaper,
+          saveOutput,
+          saveRoot,
+          refreshList,
+          onVolumeInput,
+          onVolumeChange,
+          volUp,
+          volDown,
+          getKindLabel,
+          thumbUrl,
+        }
+      },
+
+      template: `
+        <div class="wrap">
+          <h1>wall-set GUI</h1>
+          <div class="sub">scan root: {{ appState?.root || '...' }}</div>
+          <div class="toolbar">
+            <label>Root:</label>
+            <input v-model="scanRoot" type="text" placeholder="/path/to/wallpapers" />
+            <button @click="saveRoot">Save Root</button>
+            <label>Output:</label>
+            <input v-model="output" type="text" placeholder="DP-3" />
+            <button @click="saveOutput">Save Output</button>
+            <button @click="refreshList">Rescan Directory</button>
+            <div class="volume-control">
+              <label>Volume:</label>
+              <button class="vol-btn" @click="volDown">−</button>
+              <input type="range" class="volume-slider" min="0" max="500" :value="volume" @input="onVolumeInput" @change="onVolumeChange" />
+              <button class="vol-btn" @click="volUp">+</button>
+              <span class="volume-value">{{ volume }}%</span>
+            </div>
+          </div>
+          <div class="scan-meta">
+            <span class="count">{{ scanMetaText }}</span>
+            <span>{{ updateTimeText }}</span>
+          </div>
+          <div id="status" :class="{ error: statusIsError }">{{ statusMessage }}</div>
+          <div class="grid">
+            <button
+              v-for="item in appState?.items || []"
+              :key="item.path"
+              class="card"
+              :class="{ selected: appState?.last === item.path }"
+              @click="applyWallpaper(item.path)"
+            >
+              <div class="thumb-wrap">
+                <img v-if="item.thumb" class="thumb" loading="lazy" :src="thumbUrl(item.thumb)" :alt="item.name" />
+                <div v-else class="video">{{ getKindLabel(item.kind).toUpperCase() }}</div>
+                <span class="kind-badge">{{ getKindLabel(item.kind) }}</span>
+              </div>
+              <div class="meta">
+                <div class="name">{{ item.name }}</div>
+                <div class="path">{{ item.path }}</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      `
     }
 
-    async function loadList() {
-      appState = await fetchJson("/api/list");
-      render();
-    }
-
-    async function refreshList() {
-      await fetchText("/api/refresh");
-      await loadList();
-      setStatus("Directory rescan complete.");
-    }
-
-    async function saveOutput() {
-      const value = document.getElementById("output").value.trim();
-      if (!value) {
-        setStatus("Output is required.", true);
-        return;
-      }
-      const message = await fetchText("/api/set_output?output=" + encodeURIComponent(value));
-      setStatus(message);
-      await loadList();
-    }
-
-    async function saveRoot() {
-      const value = document.getElementById("scan-root").value.trim();
-      if (!value) {
-        setStatus("Root directory is required.", true);
-        return;
-      }
-      const message = await fetchText("/api/set_root?root=" + encodeURIComponent(value));
-      setStatus(message);
-      await loadList();
-    }
-
-    document.getElementById("refresh").addEventListener("click", () => {
-      refreshList().catch((err) => setStatus(String(err), true));
-    });
-    document.getElementById("save-root").addEventListener("click", () => {
-      saveRoot().catch((err) => setStatus(String(err), true));
-    });
-    document.getElementById("save-output").addEventListener("click", () => {
-      saveOutput().catch((err) => setStatus(String(err), true));
-    });
-    loadList().then(() => setStatus("Click a card to switch wallpaper.")).catch((err) => setStatus(String(err), true));
+    createApp(App).mount('#app')
   </script>
 </body>
 </html>

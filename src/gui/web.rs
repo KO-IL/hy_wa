@@ -20,11 +20,13 @@ use crate::{
 
 const PAGE_HTML: &str = include_str!("page.html");
 
-pub fn run_gui_server(state: AppState) -> std::io::Result<()> {
+pub fn run_gui_server(shared: Arc<Mutex<AppState>>) -> std::io::Result<()> {
     let listener = TcpListener::bind(SERVER_ADDR)?;
     println!("wall-set GUI running at http://{SERVER_ADDR}");
-    println!("scan root: {}", state.root.display());
-    let shared = Arc::new(Mutex::new(state));
+    {
+        let guard = shared.lock().unwrap();
+        println!("scan root: {}", guard.root.display());
+    }
 
     for stream in listener.incoming() {
         match stream {
@@ -189,6 +191,7 @@ fn handle_connection(mut stream: TcpStream, shared: Arc<Mutex<AppState>>) -> std
                 .map_err(|_| std::io::Error::other("state lock poisoned"))?;
             serve_media_file(&mut stream, &guard, path_value)
         }
+        "/api/volume" => handle_volume(&mut stream, &params),
         _ => write_text_response(&mut stream, "404 Not Found", "Not found."),
     }
 }
@@ -333,6 +336,65 @@ fn write_stream_response(
     stream.write_all(headers.as_bytes())?;
     io::copy(body, stream)?;
     Ok(())
+}
+
+fn handle_volume(stream: &mut TcpStream, params: &HashMap<String, String>) -> std::io::Result<()> {
+    if let Some(volume_str) = params.get("volume") {
+        let volume: u32 = match volume_str.parse() {
+            Ok(v) => v,
+            Err(_) => {
+                return write_text_response(stream, "400 Bad Request", "Invalid volume value.")
+            }
+        };
+        let output = std::process::Command::new("wpctl")
+            .args([
+                "set-volume",
+                "-l",
+                "50.0",
+                "@DEFAULT_AUDIO_SINK@",
+                &format!("{}%", volume),
+            ])
+            .output();
+        match output {
+            Ok(out) if out.status.success() => {
+                write_text_response(stream, "200 OK", &format!("Volume set to {}%", volume))
+            }
+            Ok(out) => {
+                let stderr = String::from_utf8_lossy(&out.stderr);
+                write_text_response(
+                    stream,
+                    "500 Internal Server Error",
+                    &format!("wpctl error: {}", stderr),
+                )
+            }
+            Err(_) => {
+                write_text_response(stream, "500 Internal Server Error", "Failed to run wpctl.")
+            }
+        }
+    } else {
+        let output = std::process::Command::new("wpctl")
+            .args(["get-volume", "@DEFAULT_AUDIO_SINK@"])
+            .output();
+        match output {
+            Ok(out) if out.status.success() => {
+                let stdout = String::from_utf8_lossy(&out.stdout);
+                let volume = stdout
+                    .split_whitespace()
+                    .nth(1)
+                    .and_then(|v| v.trim_end_matches('.').parse::<f32>().ok())
+                    .map(|v| (v * 100.0) as u32)
+                    .unwrap_or(100);
+                let body = format!(r#"{{"volume":{}}}"#, volume);
+                write_text_response(stream, "200 OK", &body)
+            }
+            Ok(_) => {
+                write_text_response(stream, "500 Internal Server Error", "Failed to get volume.")
+            }
+            Err(_) => {
+                write_text_response(stream, "500 Internal Server Error", "Failed to run wpctl.")
+            }
+        }
+    }
 }
 
 #[cfg(test)]
