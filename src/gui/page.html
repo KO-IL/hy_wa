@@ -24,7 +24,6 @@
       --purple: #bc8cff;
       --radius: 16px;
       --radius-sm: 10px;
-      --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -547,110 +546,61 @@
       line-height: 1.4;
     }
 
-    /* Preview Modal */
-    .preview-overlay {
+    /* Floating Preview */
+    .floating-preview {
       position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      animation: fadeIn 0.2s ease;
-      cursor: pointer;
-    }
-
-    .preview-content {
-      position: relative;
-      max-width: 90vw;
-      max-height: 85vh;
-      animation: zoomIn 0.25s ease;
-    }
-
-    @keyframes zoomIn {
-      from { transform: scale(0.9); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-
-    .preview-content img {
-      max-width: 100%;
-      max-height: 85vh;
-      border-radius: var(--radius);
-      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6);
-      object-fit: contain;
-    }
-
-    .preview-content video {
-      max-width: 100%;
-      max-height: 85vh;
-      border-radius: var(--radius);
-      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.6);
-    }
-
-    .preview-info {
-      position: absolute;
-      bottom: -50px;
-      left: 0;
-      right: 0;
-      text-align: center;
-    }
-
-    .preview-info .name {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 4px;
-    }
-
-    .preview-info .path {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .preview-close {
-      position: absolute;
-      top: -40px;
-      right: 0;
-      width: 36px;
-      height: 36px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 50%;
-      color: var(--text);
-      font-size: 18px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-    }
-
-    .preview-close:hover {
-      background: rgba(255, 255, 255, 0.2);
-      transform: scale(1.1);
-    }
-
-    /* Preview trigger hint */
-    .preview-hint {
-      position: absolute;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 6px 12px;
-      background: rgba(0, 0, 0, 0.7);
-      border-radius: 20px;
-      font-size: 11px;
-      color: var(--text);
+      z-index: 100;
+      pointer-events: none;
       opacity: 0;
       transition: opacity 0.2s ease;
-      z-index: 5;
-      pointer-events: none;
-      backdrop-filter: blur(8px);
+      filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.5));
     }
 
-    .card:hover .preview-hint { opacity: 1; }
+    .floating-preview.visible {
+      opacity: 1;
+    }
+
+    .floating-preview img {
+      max-width: 400px;
+      max-height: 300px;
+      border-radius: var(--radius);
+      border: 2px solid var(--border);
+      object-fit: contain;
+      background: var(--panel-solid);
+    }
+
+    .floating-preview video {
+      max-width: 400px;
+      max-height: 300px;
+      border-radius: var(--radius);
+      border: 2px solid var(--border);
+      background: #000;
+    }
+
+    .floating-preview .project-preview {
+      width: 300px;
+      height: 200px;
+      border-radius: var(--radius);
+      border: 2px solid var(--border);
+      background: linear-gradient(135deg, rgba(188, 140, 255, 0.2), rgba(88, 166, 255, 0.2));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .floating-preview .project-preview .icon { font-size: 48px; }
+    .floating-preview .project-preview .name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      max-width: 90%;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
     /* Empty State */
     .empty-state {
@@ -695,6 +645,7 @@
       .volume-control { margin-left: 0; width: 100%; justify-content: center; }
       .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
       .thumb-wrap { height: 120px; }
+      .floating-preview { display: none; }
     }
   </style>
 </head>
@@ -722,6 +673,7 @@
         const volume = ref(100)
         const loading = ref(true)
         const previewItem = ref(null)
+        const previewPos = ref({ x: 0, y: 0 })
         let refreshTimer = null
 
         function setStatus(message, type = 'success') {
@@ -836,45 +788,57 @@
           return "/api/file?path=" + encodeURIComponent(path)
         }
 
-        function openPreview(item) {
+        function showPreview(item, event) {
           previewItem.value = item
+          updatePreviewPos(event)
         }
 
-        function closePreview() {
+        function hidePreview() {
           previewItem.value = null
         }
 
-        function handleKeydown(e) {
-          if (e.key === 'Escape' && previewItem.value) {
-            closePreview()
+        function updatePreviewPos(event) {
+          const x = event.clientX + 20
+          const y = event.clientY + 20
+          const maxX = window.innerWidth - 420
+          const maxY = window.innerHeight - 320
+          previewPos.value = {
+            x: Math.min(x, maxX),
+            y: Math.min(y, maxY)
+          }
+        }
+
+        function onMouseMove(event) {
+          if (previewItem.value) {
+            updatePreviewPos(event)
           }
         }
 
         onMounted(async () => {
           try {
             await loadList()
-            setStatus("Click a card to apply wallpaper, hover to preview", 'info')
+            setStatus("Click to apply, hover to preview", 'info')
           } catch (err) {
             setStatus(String(err), 'error')
           }
           loading.value = false
           await loadVolume()
           refreshTimer = setInterval(() => refreshList({ quiet: true }).catch(() => {}), AUTO_REFRESH_INTERVAL)
-          document.addEventListener('keydown', handleKeydown)
+          document.addEventListener('mousemove', onMouseMove)
         })
 
         onUnmounted(() => {
           if (refreshTimer) clearInterval(refreshTimer)
-          document.removeEventListener('keydown', handleKeydown)
+          document.removeEventListener('mousemove', onMouseMove)
         })
 
         return {
           appState, statusMessage, statusType, scanRoot, output, volume, loading,
-          wallpaperCount, scanMetaText, updateTimeText, previewItem,
+          wallpaperCount, scanMetaText, updateTimeText, previewItem, previewPos,
           applyWallpaper, saveOutput, saveRoot, refreshList,
           onVolumeInput, onVolumeChange, volUp, volDown,
           getKindClass, getKindLabel, thumbUrl, mediaUrl,
-          openPreview, closePreview,
+          showPreview, hidePreview,
         }
       },
 
@@ -953,7 +917,8 @@
               class="card"
               :class="{ selected: appState?.last === item.path }"
               @click="applyWallpaper(item.path)"
-              @mouseenter="openPreview(item)"
+              @mouseenter="showPreview(item, $event)"
+              @mouseleave="hidePreview"
             >
               <div class="thumb-wrap">
                 <img v-if="item.thumb" class="thumb" loading="lazy" :src="thumbUrl(item.thumb)" :alt="item.name" />
@@ -967,36 +932,33 @@
                 <div class="name">{{ item.name }}</div>
                 <div class="path">{{ item.path }}</div>
               </div>
-              <div class="preview-hint">Hover to preview</div>
             </button>
           </div>
         </div>
 
-        <!-- Preview Modal -->
-        <div v-if="previewItem" class="preview-overlay" @click.self="closePreview">
-          <div class="preview-content">
-            <button class="preview-close" @click="closePreview">✕</button>
-            <img
-              v-if="previewItem.kind === 'image'"
-              :src="mediaUrl(previewItem.path)"
-              :alt="previewItem.name"
-            />
-            <video
-              v-else-if="previewItem.kind === 'video'"
-              :src="mediaUrl(previewItem.path)"
-              autoplay
-              loop
-              muted
-              playsinline
-            />
-            <div v-else class="video-placeholder" style="width: 500px; height: 300px; border-radius: 16px;">
-              <span class="icon">🎮</span>
-              <span class="label">{{ previewItem.name }}</span>
-            </div>
-            <div class="preview-info">
-              <div class="name">{{ previewItem.name }}</div>
-              <div class="path">{{ previewItem.path }}</div>
-            </div>
+        <!-- Floating Preview -->
+        <div
+          v-if="previewItem"
+          class="floating-preview"
+          :class="{ visible: previewItem }"
+          :style="{ left: previewPos.x + 'px', top: previewPos.y + 'px' }"
+        >
+          <img
+            v-if="previewItem.kind === 'image'"
+            :src="mediaUrl(previewItem.path)"
+            :alt="previewItem.name"
+          />
+          <video
+            v-else-if="previewItem.kind === 'video'"
+            :src="mediaUrl(previewItem.path)"
+            autoplay
+            loop
+            muted
+            playsinline
+          />
+          <div v-else class="project-preview">
+            <span class="icon">🎮</span>
+            <span class="name">{{ previewItem.name }}</span>
           </div>
         </div>
       `
