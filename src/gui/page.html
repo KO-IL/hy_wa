@@ -956,6 +956,11 @@
             muted
             playsinline
           />
+          <img
+            v-else-if="previewItem.thumb"
+            :src="thumbUrl(previewItem.thumb)"
+            :alt="previewItem.name"
+          />
           <div v-else class="project-preview">
             <span class="icon">🎮</span>
             <span class="name">{{ previewItem.name }}</span>
