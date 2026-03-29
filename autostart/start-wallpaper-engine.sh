@@ -6,6 +6,7 @@ for _ in $(seq 1 30); do
     if /usr/bin/swww query >/dev/null 2>&1; then
         sleep 2
         /home/wang/hw/wall-set/target/release/wall-set restore
+        /home/wang/hw/wall-set/target/release/wall-set &
         exit 0
     fi
 

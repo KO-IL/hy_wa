@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Wall-Set
+Comment=Wallpaper Manager GUI
+Exec=/home/wang/hw/wall-set/autostart/wall-set-gui.sh
+Icon=preferences-desktop-wallpaper
+Terminal=false
+Categories=Utility;
+StartupWMClass=wall-set
