@@ -1,10 +1,25 @@
-# wall-set
-
-[English](README.md)
-
-![Screenshot](screenshot.png)
+<div align="center">
+  <h1>wall-set</h1>
+  <p>一个面向 Wayland 的轻量壁纸管理器，支持图片、视频和 Wallpaper Engine 项目。</p>
+  <p>
+    <a href="README.md">English</a> ·
+    <a href="docs/assets/gui-demo.mp4">演示视频</a>
+  </p>
+  <a href="docs/assets/gui-demo.mp4">
+    <img src="docs/assets/githubhy.png" alt="wall-set GUI preview" width="900" />
+  </a>
+</div>
 
 `wall-set` 是一个面向 Linux Wayland 环境的轻量壁纸管理器，使用 Rust 编写。它提供本地 Web 界面来浏览壁纸库，图片壁纸通过 `swww` 应用，Wallpaper Engine 的视频和项目壁纸通过 `linux-wallpaperengine` 启动。
+
+## 亮点
+
+- 自带本地 Web GUI，支持壁纸网格浏览和侧边设置面板
+- 同时支持静态图片、视频壁纸和 Wallpaper Engine 项目
+- 启动时自动恢复上一次成功应用的壁纸
+- 可保存每个 Wallpaper Engine 项目的属性覆盖值
+- 可在界面中直接切换扫描目录和输出显示器
+- 提供按壁纸单独控制的预览模糊开关，适合防旁观
 
 ## 功能特性
 
@@ -15,6 +30,7 @@
 - 支持命令行直接应用指定壁纸
 - 可保存 Wallpaper Engine 项目的属性覆盖值
 - 可在界面里修改扫描目录和输出显示器
+- 可在 GUI 中对单张壁纸预览启用模糊保护
 
 ## 支持的资源类型
 

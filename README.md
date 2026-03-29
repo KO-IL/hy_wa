@@ -1,10 +1,25 @@
-# wall-set
+<div align="center">
+  <h1>wall-set</h1>
+  <p>A lightweight Wayland wallpaper manager for images, videos, and Wallpaper Engine projects.</p>
+  <p>
+    <a href="README.zh-CN.md">中文说明</a> ·
+    <a href="docs/assets/gui-demo.mp4">Demo Video</a>
+  </p>
+  <a href="docs/assets/gui-demo.mp4">
+    <img src="docs/assets/githubhy.png" alt="wall-set GUI preview" width="900" />
+  </a>
+</div>
 
-[中文说明](README.zh-CN.md)
+`wall-set` is a small Rust wallpaper manager for Linux desktop setups that use Wayland. It gives you a local web UI to browse a wallpaper library, apply static images through `swww`, and launch Wallpaper Engine videos or project wallpapers through `linux-wallpaperengine`.
 
-![Screenshot](screenshot.png)
+## Highlights
 
-`wall-set` is a small Rust wallpaper manager for Linux desktop setups that use Wayland. It can browse a wallpaper library in a local web UI, apply static images through `swww`, and launch Wallpaper Engine videos or project wallpapers through `linux-wallpaperengine`.
+- Built-in local web UI with a wallpaper grid and settings drawer
+- Supports still images, video wallpapers, and Wallpaper Engine projects
+- Restores the last applied wallpaper automatically on startup
+- Saves per-project Wallpaper Engine property overrides
+- Lets you change scan root and output target from the UI
+- Includes a per-wallpaper privacy blur toggle for hiding previews in the GUI
 
 ## Features
 
@@ -15,6 +30,7 @@
 - Can apply a wallpaper directly from the CLI
 - Stores per-project Wallpaper Engine property overrides
 - Lets you change the scan root and target output from the UI
+- Lets you blur individual wallpaper previews from the GUI for privacy
 
 ## Supported Media
 
