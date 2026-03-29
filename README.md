@@ -1,88 +1,126 @@
 # wall-set
 
+[中文说明](README.zh-CN.md)
+
 ![Screenshot](screenshot.png)
 
-Linux 壁纸管理器，支持图片和 Wallpaper Engine 视频/项目。
+`wall-set` is a small Rust wallpaper manager for Linux desktop setups that use Wayland. It can browse a wallpaper library in a local web UI, apply static images through `swww`, and launch Wallpaper Engine videos or project wallpapers through `linux-wallpaperengine`.
 
-## 功能
+## Features
 
-- Web GUI 界面浏览和切换壁纸
-- 支持图片壁纸（通过 [swww](https://github.com/HikariLly/swww)）
-- 支持 Wallpaper Engine 项目和视频
-- 命令行直接应用壁纸
-- 恢复上次使用的壁纸
+- Local web UI served from `127.0.0.1:7878`
+- Recursive wallpaper scan under a configurable root directory
+- Supports image files, video files, and Wallpaper Engine projects
+- Remembers the last applied wallpaper and restores it on startup
+- Can apply a wallpaper directly from the CLI
+- Stores per-project Wallpaper Engine property overrides
+- Lets you change the scan root and target output from the UI
 
-## 依赖
+## Supported Media
 
-- **swww** - Wayland 动态壁纸守护进程（用于图片）
-- **Wallpaper Engine for Linux** ([Almamu](https://github.com/Almamu/linux-wallpaperengine)) - 用于视频和项目
-- Rust 工具链
+- Images: `jpg`, `jpeg`, `png`, `bmp`, `gif`, `webp`
+- Videos: `mp4`, `mkv`, `webm`, `mov`, `avi`, `m4v`
+- Wallpaper Engine projects: directories containing `project.json`
 
-## 安装
+## Runtime Requirements
+
+- Linux with Wayland
+- Rust toolchain for building
+- [`swww`](https://github.com/LGFae/swww) for image wallpapers
+- [`linux-wallpaperengine`](https://github.com/Almamu/linux-wallpaperengine) for video and project wallpapers
+
+`wall-set` assumes `linux-wallpaperengine` is available in `PATH`. If it is installed somewhere else, set `LINUX_WALLPAPERENGINE_BIN` before running the app.
+
+## Build
 
 ```bash
 cargo build --release
-sudo cp target/release/wall-set /usr/local/bin/
+sudo install -Dm755 target/release/wall-set /usr/local/bin/wall-set
 ```
 
-## 使用
+## Usage
 
-### GUI 模式
+### Web UI
+
+Start the built-in server:
 
 ```bash
 wall-set
 ```
 
-访问 http://localhost:7878
+Then open:
 
-### 命令行模式
-
-应用壁纸：
-
-```bash
-wall-set /path/to/wallpaper/project.json
-wall-set /path/to/image.jpg
-wall-set /path/to/video.mp4
+```text
+http://127.0.0.1:7878
 ```
 
-恢复上次壁纸：
+When the GUI starts, it also tries to restore the last wallpaper saved in the config.
+
+### CLI
+
+Apply a wallpaper directly:
+
+```bash
+wall-set /path/to/image.png
+wall-set /path/to/video.mp4
+wall-set /path/to/project-directory
+```
+
+Restore the last saved wallpaper:
 
 ```bash
 wall-set restore
 ```
 
-### 环境变量
+## Configuration
 
-- `LINUX_WALLPAPERENGINE_BIN` - Wallpaper Engine 可执行文件路径（默认：`linux-wallpaperengine`）
-- `WALL_SET_ENGINE_DEBUG=1` - 调试模式（显示引擎输出）
+The config file is stored at:
 
-## 配置
-
-配置文件位于 `~/.config/wall-set/settings.conf`：
-
+```text
+~/.config/wall-set/settings.conf
 ```
+
+Example:
+
+```ini
 output=DP-3
 root=/path/to/wallpapers
-last=/path/to/last/wallpaper
+last=/path/to/wallpapers/example.png
+prop=/path/to/project\tgod_rays\t0
 ```
 
-## 自动启动
+Fields:
+
+- `output`: target display output used by the wallpaper backend
+- `root`: directory scanned by the web UI
+- `last`: last wallpaper that was applied successfully
+- `prop`: saved Wallpaper Engine property override entries
+
+## Environment Variables
+
+- `LINUX_WALLPAPERENGINE_BIN`: override the Wallpaper Engine executable path
+- `WALL_SET_ENGINE_DEBUG=1`: show engine command output for debugging
+
+## Autostart Notes
+
+The `autostart/` directory contains desktop entries and helper scripts for restoring wallpapers on login. The shipped `.desktop` files and scripts currently contain machine-specific absolute paths such as `/home/wang/hw/wall-set`, so adjust them before using them on another system.
+
+Typical setup:
 
 ```bash
 cp autostart/wall-set.desktop ~/.config/autostart/
+cp autostart/wall-set-gui.desktop ~/.config/autostart/
 ```
 
-## 代码结构
+## Project Layout
 
-- `src/main.rs` - 程序入口和参数解析
-- `src/app/` - 配置/状态与业务操作
-- `src/fs/` - 路径规范化与扫描
-- `src/engine/` - swww/Wallpaper Engine 启动与控制
-- `src/gui/` - 内置 Web GUI（包含 `page.html`）
-- `src/util/` - 小工具（JSON/URL 编解码等）
+- `src/main.rs`: entry point and mode selection
+- `src/app/`: settings, runtime state, and state transitions
+- `src/fs/`: scan-root resolution and wallpaper discovery
+- `src/engine/`: wallpaper engine launch and project-property handling
+- `src/gui/`: local HTTP server and embedded HTML UI
+- `autostart/`: login startup helpers
 
-## 支持的格式
+## Current Scope
 
-- 图片：jpg, jpeg, png, bmp, gif, webp
-- 视频：mp4, mkv, webm, mov, avi, m4v
-- Wallpaper Engine 项目（包含 project.json 的目录）
+This project is intentionally lightweight. It uses a custom TCP/HTTP server and a single embedded HTML page instead of a full GUI framework, which keeps deployment simple but also means there is no authentication layer, database, or desktop integration beyond the provided scripts.
