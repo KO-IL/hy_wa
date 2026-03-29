@@ -381,12 +381,57 @@
     }
 
     /* Grid */
+    .content-shell {
+      margin-top: 20px;
+    }
+
+    .library-panel,
+    .detail-panel,
+    .settings-drawer {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .library-panel {
+      padding: 18px;
+      animation: fadeIn 0.5s ease 0.3s both;
+    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
       gap: 16px;
-      margin-top: 20px;
-      animation: fadeIn 0.5s ease 0.3s both;
+    }
+
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 150;
+      background: rgba(4, 8, 12, 0.58);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      animation: fadeIn 0.2s ease;
+    }
+
+    .settings-drawer {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      bottom: 18px;
+      width: min(420px, calc(100vw - 28px));
+      z-index: 160;
+      padding: 18px;
+      overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+      animation: drawerIn 0.24s ease;
+    }
+
+    @keyframes drawerIn {
+      from { opacity: 0; transform: translateX(28px); }
+      to { opacity: 1; transform: translateX(0); }
     }
 
     /* Card */
@@ -426,6 +471,23 @@
     .card.selected {
       border-color: var(--accent);
       box-shadow: 0 0 0 2px var(--accent), 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .card.active:not(.selected)::after {
+      content: 'Live';
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(63, 185, 80, 0.18);
+      border: 1px solid rgba(63, 185, 80, 0.3);
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      z-index: 10;
     }
 
     .card.selected::after {
@@ -546,6 +608,236 @@
       line-height: 1.4;
     }
 
+    .detail-content {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .detail-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .detail-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .drawer-close {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      justify-content: center;
+      border-radius: 999px;
+      font-size: 20px;
+      line-height: 1;
+      flex: none;
+    }
+
+    .detail-sub,
+    .detail-path {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      word-break: break-all;
+    }
+
+    .selected-preview {
+      overflow: hidden;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.25);
+      min-height: 180px;
+    }
+
+    .selected-preview img {
+      display: block;
+      width: 100%;
+      max-height: 260px;
+      object-fit: cover;
+    }
+
+    .selected-preview-fallback {
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--muted);
+      background: linear-gradient(135deg, rgba(188, 140, 255, 0.18), rgba(88, 166, 255, 0.14));
+    }
+
+    .selected-preview-fallback .icon {
+      font-size: 34px;
+      color: var(--text);
+    }
+
+    .property-placeholder {
+      padding: 16px;
+      border-radius: var(--radius-sm);
+      border: 1px dashed var(--border);
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.03);
+      line-height: 1.5;
+    }
+
+    .property-placeholder.error {
+      color: var(--danger);
+      border-color: rgba(248, 81, 73, 0.28);
+      background: var(--danger-soft);
+    }
+
+    .property-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .property-card {
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .property-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .property-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .property-kind {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--blue);
+    }
+
+    .property-control input[type="text"],
+    .property-control select {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.28);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    .property-control input[type="text"]:focus,
+    .property-control select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .text-control,
+    .color-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .text-control .btn {
+      flex: none;
+    }
+
+    .slider-control input[type="range"] {
+      width: 100%;
+    }
+
+    .slider-meta {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .slider-meta strong {
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .color-control input[type="color"] {
+      width: 56px;
+      height: 40px;
+      padding: 4px;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .color-control code {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .toggle input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .toggle-track {
+      position: relative;
+      width: 46px;
+      height: 26px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid var(--border);
+      transition: all 0.2s ease;
+    }
+
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.2s ease;
+    }
+
+    .toggle input:checked + .toggle-track {
+      background: var(--accent-soft);
+      border-color: rgba(63, 185, 80, 0.4);
+    }
+
+    .toggle input:checked + .toggle-track::after {
+      transform: translateX(20px);
+      background: var(--accent);
+    }
+
+    .toggle-text {
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
     /* Floating Preview */
     .floating-preview {
       position: fixed;
@@ -645,6 +937,15 @@
       .volume-control { margin-left: 0; width: 100%; justify-content: center; }
       .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
       .thumb-wrap { height: 120px; }
+      .settings-drawer {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        bottom: 10px;
+        width: auto;
+      }
+      .detail-header { flex-direction: column; align-items: stretch; }
+      .text-control, .color-control { flex-direction: column; align-items: stretch; }
       .floating-preview { display: none; }
     }
   </style>
@@ -653,7 +954,7 @@
   <div class="bg-effects"></div>
   <div id="app"></div>
   <script type="module">
-    import { createApp, ref, computed, onMounted, onUnmounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js'
+    import { createApp, ref, computed, onMounted, onUnmounted, nextTick } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js'
 
     const AUTO_REFRESH_INTERVAL = 15000
     const timeFormatter = new Intl.DateTimeFormat(undefined, {
@@ -674,6 +975,17 @@
         const loading = ref(true)
         const previewItem = ref(null)
         const previewPos = ref({ x: 0, y: 0 })
+        const selectedPath = ref('')
+        const settingsOpen = ref(false)
+        const propertyState = ref({
+          path: '',
+          projectDir: '',
+          kind: '',
+          properties: [],
+          loading: false,
+          error: '',
+        })
+        const propertyDrafts = ref({})
         let refreshTimer = null
 
         function setStatus(message, type = 'success') {
@@ -705,11 +1017,60 @@
           return timeFormatter.format(lastRefreshTime.value)
         })
 
+        const selectedItem = computed(() => {
+          const items = appState.value?.items || []
+          return items.find(item => item.path === selectedPath.value) || null
+        })
+
+        const selectedSettingsCount = computed(() => propertyState.value.properties?.length || 0)
+
+        function setPropertyState(next) {
+          propertyState.value = {
+            path: '',
+            projectDir: '',
+            kind: '',
+            properties: [],
+            loading: false,
+            error: '',
+            ...next,
+          }
+        }
+
+        function hydratePropertyDrafts(properties) {
+          const next = {}
+          for (const prop of properties || []) {
+            next[prop.key] = uiValueFromProperty(prop)
+          }
+          propertyDrafts.value = next
+        }
+
+        function ensureSelection() {
+          const items = appState.value?.items || []
+          if (!items.length) {
+            selectedPath.value = ''
+            settingsOpen.value = false
+            setPropertyState({})
+            return
+          }
+          if (selectedPath.value && items.some(item => item.path === selectedPath.value)) {
+            return
+          }
+          if (appState.value?.last && items.some(item => item.path === appState.value.last)) {
+            selectedPath.value = appState.value.last
+            return
+          }
+          selectedPath.value = items[0].path
+        }
+
         async function loadList() {
           appState.value = await fetchJson("/api/list")
           lastRefreshTime.value = new Date()
           scanRoot.value = appState.value.root || ''
           output.value = appState.value.output || ''
+          ensureSelection()
+          if (selectedPath.value) {
+            await loadProperties(selectedPath.value)
+          }
         }
 
         async function refreshList({ quiet = false } = {}) {
@@ -788,6 +1149,132 @@
           return "/api/file?path=" + encodeURIComponent(path)
         }
 
+        async function selectWallpaper(path) {
+          selectedPath.value = path
+          settingsOpen.value = true
+          await loadProperties(path)
+        }
+
+        function closeSettings() {
+          settingsOpen.value = false
+        }
+
+        async function applySelectedWallpaper() {
+          if (!selectedItem.value) {
+            setStatus("No wallpaper selected", 'error')
+            return
+          }
+          await applyWallpaper(selectedItem.value.path)
+        }
+
+        async function loadProperties(path) {
+          const item = (appState.value?.items || []).find(entry => entry.path === path)
+          if (!item) {
+            setPropertyState({})
+            return
+          }
+          if (item.kind !== "project") {
+            setPropertyState({
+              path,
+              kind: item.kind,
+              properties: [],
+              error: '',
+            })
+            propertyDrafts.value = {}
+            return
+          }
+          setPropertyState({
+            path,
+            kind: item.kind,
+            properties: propertyState.value.path === path ? propertyState.value.properties : [],
+            loading: true,
+            error: '',
+          })
+          try {
+            const data = await fetchJson("/api/properties?path=" + encodeURIComponent(path))
+            setPropertyState({
+              ...data,
+              loading: false,
+              error: '',
+            })
+            hydratePropertyDrafts(data.properties)
+          } catch (err) {
+            setPropertyState({
+              path,
+              kind: item.kind,
+              properties: [],
+              loading: false,
+              error: String(err),
+            })
+            propertyDrafts.value = {}
+          }
+        }
+
+        function uiValueFromProperty(prop) {
+          if (prop.kind === "color") return rgbFloatsToHex(prop.value)
+          return prop.value
+        }
+
+        function sliderMin(prop) { return prop.min ?? "0" }
+        function sliderMax(prop) { return prop.max ?? "100" }
+        function sliderStep(prop) { return prop.step ?? "1" }
+
+        function rgbFloatsToHex(raw) {
+          const parts = String(raw).split(',').map(item => Number.parseFloat(item.trim()))
+          if (parts.length < 3 || parts.some(num => Number.isNaN(num))) return "#ffffff"
+          const toHex = (num) => Math.max(0, Math.min(255, Math.round(num * 255))).toString(16).padStart(2, '0')
+          return "#" + parts.slice(0, 3).map(toHex).join('')
+        }
+
+        function hexToRgbFloats(hex) {
+          const match = String(hex).trim().match(/^#?([0-9a-f]{6})$/i)
+          if (!match) return "1.000000, 1.000000, 1.000000"
+          const raw = match[1]
+          const values = [0, 2, 4].map((index) => parseInt(raw.slice(index, index + 2), 16) / 255)
+          return values.map(value => value.toFixed(6)).join(", ")
+        }
+
+        function propertyValueForEngine(prop) {
+          const current = propertyDrafts.value[prop.key] ?? ''
+          if (prop.kind === "color") return hexToRgbFloats(current)
+          if (prop.kind === "boolean") return current === "1" ? "1" : "0"
+          return String(current)
+        }
+
+        async function saveProjectProperty(prop) {
+          if (!selectedItem.value) return
+          try {
+            setStatus(`Saving ${prop.label}...`, 'info')
+            const query = new URLSearchParams({
+              path: selectedItem.value.path,
+              key: prop.key,
+              value: propertyValueForEngine(prop),
+            })
+            const data = await fetchJson("/api/set_property?" + query.toString())
+            setPropertyState({
+              ...data,
+              loading: false,
+              error: '',
+            })
+            hydratePropertyDrafts(data.properties)
+            setStatus(`${prop.label} updated`)
+          } catch (err) {
+            setStatus(String(err), 'error')
+          }
+        }
+
+        function setBooleanProperty(prop, checked) {
+          propertyDrafts.value[prop.key] = checked ? "1" : "0"
+          saveProjectProperty(prop)
+        }
+
+        function selectedPreviewThumb() {
+          if (!selectedItem.value) return null
+          if (selectedItem.value.thumb) return thumbUrl(selectedItem.value.thumb)
+          if (selectedItem.value.kind === "image") return mediaUrl(selectedItem.value.path)
+          return null
+        }
+
         function showPreview(item, event) {
           previewItem.value = item
           updatePreviewPos(event)
@@ -817,7 +1304,7 @@
         onMounted(async () => {
           try {
             await loadList()
-            setStatus("Click to apply, hover to preview", 'info')
+            setStatus("Click a wallpaper card to open its settings panel", 'info')
           } catch (err) {
             setStatus(String(err), 'error')
           }
@@ -835,10 +1322,13 @@
         return {
           appState, statusMessage, statusType, scanRoot, output, volume, loading,
           wallpaperCount, scanMetaText, updateTimeText, previewItem, previewPos,
-          applyWallpaper, saveOutput, saveRoot, refreshList,
+          selectedPath, selectedItem, propertyState, propertyDrafts, selectedSettingsCount,
+          settingsOpen,
+          applyWallpaper, applySelectedWallpaper, saveOutput, saveRoot, refreshList,
           onVolumeInput, onVolumeChange, volUp, volDown,
           getKindClass, getKindLabel, thumbUrl, mediaUrl,
-          showPreview, hidePreview,
+          showPreview, hidePreview, selectWallpaper, closeSettings, saveProjectProperty,
+          sliderMin, sliderMax, sliderStep, setBooleanProperty, selectedPreviewThumb,
         }
       },
 
@@ -904,37 +1394,138 @@
             <span>Loading wallpapers...</span>
           </div>
 
-          <div v-else class="grid">
-            <div v-if="!appState?.items?.length" class="empty-state">
-              <div class="icon">🖼️</div>
-              <div class="title">No wallpapers found</div>
-              <div class="desc">Try changing the scan root directory</div>
-            </div>
+          <div v-else class="content-shell">
+            <section class="library-panel">
+              <div v-if="!appState?.items?.length" class="empty-state">
+                <div class="icon">🖼️</div>
+                <div class="title">No wallpapers found</div>
+                <div class="desc">Try changing the scan root directory</div>
+              </div>
 
-            <button
-              v-for="item in appState?.items || []"
-              :key="item.path"
-              class="card"
-              :class="{ selected: appState?.last === item.path }"
-              @click="applyWallpaper(item.path)"
-              @mouseenter="showPreview(item, $event)"
-              @mouseleave="hidePreview"
-            >
-              <div class="thumb-wrap">
-                <img v-if="item.thumb" class="thumb" loading="lazy" :src="thumbUrl(item.thumb)" :alt="item.name" />
-                <div v-else class="video-placeholder">
-                  <span class="icon">{{ item.kind === 'video' ? '▶' : '🎮' }}</span>
-                  <span class="label">{{ getKindLabel(item.kind) }}</span>
-                </div>
-                <span class="kind-badge" :class="getKindClass(item.kind)">{{ getKindLabel(item.kind) }}</span>
+              <div v-else class="grid">
+                <article
+                  v-for="item in appState?.items || []"
+                  :key="item.path"
+                  class="card"
+                  :class="{ selected: selectedPath === item.path, active: appState?.last === item.path }"
+                  tabindex="0"
+                  @click="selectWallpaper(item.path)"
+                  @mouseenter="showPreview(item, $event)"
+                  @mouseleave="hidePreview"
+                >
+                  <div class="thumb-wrap">
+                    <img v-if="item.thumb" class="thumb" loading="lazy" :src="thumbUrl(item.thumb)" :alt="item.name" />
+                    <div v-else class="video-placeholder">
+                      <span class="icon">{{ item.kind === 'video' ? '▶' : '🎮' }}</span>
+                      <span class="label">{{ getKindLabel(item.kind) }}</span>
+                    </div>
+                    <span class="kind-badge" :class="getKindClass(item.kind)">{{ getKindLabel(item.kind) }}</span>
+                  </div>
+                  <div class="meta">
+                    <div class="name">{{ item.name }}</div>
+                    <div class="path">{{ item.path }}</div>
+                  </div>
+                </article>
               </div>
-              <div class="meta">
-                <div class="name">{{ item.name }}</div>
-                <div class="path">{{ item.path }}</div>
-              </div>
-            </button>
+            </section>
           </div>
         </div>
+
+        <div v-if="settingsOpen && selectedItem" class="drawer-backdrop" @click="closeSettings"></div>
+        <aside v-if="settingsOpen && selectedItem" class="settings-drawer">
+          <div class="detail-content">
+            <div class="detail-header">
+              <div>
+                <div class="detail-title">{{ selectedItem.name }}</div>
+                <div class="detail-sub">{{ getKindLabel(selectedItem.kind) }} · {{ selectedSettingsCount }} settings</div>
+              </div>
+              <button class="btn drawer-close" @click="closeSettings">×</button>
+            </div>
+
+            <div class="selected-preview">
+              <img v-if="selectedPreviewThumb()" :src="selectedPreviewThumb()" :alt="selectedItem.name" />
+              <div v-else class="selected-preview-fallback">
+                <span class="icon">{{ selectedItem.kind === 'video' ? '▶' : '🎮' }}</span>
+                <span>{{ selectedItem.name }}</span>
+              </div>
+            </div>
+
+            <div class="detail-path">{{ selectedItem.path }}</div>
+
+            <button class="btn btn-accent" @click="applySelectedWallpaper">Apply This Wallpaper</button>
+
+            <div v-if="propertyState.loading" class="property-placeholder">Loading project settings...</div>
+            <div v-else-if="propertyState.error" class="property-placeholder error">{{ propertyState.error }}</div>
+            <div v-else-if="selectedItem.kind !== 'project'" class="property-placeholder">
+              This item is not a Wallpaper Engine project, so it has no editable Wallpaper Engine properties.
+            </div>
+            <div v-else-if="!propertyState.properties.length" class="property-placeholder">
+              This project does not expose editable properties.
+            </div>
+            <div v-else class="property-list">
+              <div v-for="prop in propertyState.properties" :key="prop.key" class="property-card">
+                <div class="property-top">
+                  <label class="property-label">{{ prop.label }}</label>
+                  <span class="property-kind">{{ prop.kind }}</span>
+                </div>
+
+                <div v-if="prop.kind === 'boolean'" class="property-control boolean-control">
+                  <label class="toggle">
+                    <input
+                      type="checkbox"
+                      :checked="propertyDrafts[prop.key] === '1'"
+                      @change="setBooleanProperty(prop, $event.target.checked)"
+                    />
+                    <span class="toggle-track"></span>
+                    <span class="toggle-text">{{ propertyDrafts[prop.key] === '1' ? 'On' : 'Off' }}</span>
+                  </label>
+                </div>
+
+                <div v-else-if="prop.kind === 'slider'" class="property-control slider-control">
+                  <input
+                    type="range"
+                    :min="sliderMin(prop)"
+                    :max="sliderMax(prop)"
+                    :step="sliderStep(prop)"
+                    v-model="propertyDrafts[prop.key]"
+                    @change="saveProjectProperty(prop)"
+                  />
+                  <div class="slider-meta">
+                    <span>{{ sliderMin(prop) }}</span>
+                    <strong>{{ propertyDrafts[prop.key] }}</strong>
+                    <span>{{ sliderMax(prop) }}</span>
+                  </div>
+                </div>
+
+                <div v-else-if="prop.kind === 'color'" class="property-control color-control">
+                  <input
+                    type="color"
+                    v-model="propertyDrafts[prop.key]"
+                    @change="saveProjectProperty(prop)"
+                  />
+                  <code>{{ propertyDrafts[prop.key] }}</code>
+                </div>
+
+                <div v-else-if="prop.options?.length" class="property-control">
+                  <select v-model="propertyDrafts[prop.key]" @change="saveProjectProperty(prop)">
+                    <option v-for="option in prop.options" :key="option.value" :value="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
+                </div>
+
+                <div v-else class="property-control text-control">
+                  <input
+                    type="text"
+                    v-model="propertyDrafts[prop.key]"
+                    @keydown.enter.prevent="saveProjectProperty(prop)"
+                  />
+                  <button class="btn" @click="saveProjectProperty(prop)">Save</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
 
         <!-- Floating Preview -->
         <div

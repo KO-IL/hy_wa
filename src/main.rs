@@ -16,6 +16,8 @@ mod state_ops;
 mod text;
 #[path = "engine/wallpaper.rs"]
 mod wallpaper;
+#[path = "engine/properties.rs"]
+mod properties;
 #[path = "gui/web.rs"]
 mod web;
 
@@ -58,6 +60,7 @@ fn main() {
         resolved_engine_bin,
         engine_workdir,
         engine_ld_library_path,
+        project_overrides: settings.project_overrides.clone(),
         settings,
         wallpapers,
         active_engine_pid: None,

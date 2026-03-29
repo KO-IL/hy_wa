@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 use crate::constants::DEFAULT_OUTPUT;
 
@@ -7,6 +7,7 @@ pub struct Settings {
     pub output: String,
     pub scan_root: Option<String>,
     pub last_wallpaper: Option<String>,
+    pub project_overrides: HashMap<String, HashMap<String, String>>,
 }
 
 impl Default for Settings {
@@ -15,6 +16,7 @@ impl Default for Settings {
             output: DEFAULT_OUTPUT.to_string(),
             scan_root: None,
             last_wallpaper: None,
+            project_overrides: HashMap::new(),
         }
     }
 }
@@ -46,6 +48,24 @@ pub struct WallpaperEntry {
     pub thumb: Option<String>,
 }
 
+#[derive(Clone, Default)]
+pub struct ProjectPropertyOption {
+    pub value: String,
+    pub label: String,
+}
+
+#[derive(Clone, Default)]
+pub struct ProjectProperty {
+    pub key: String,
+    pub label: String,
+    pub kind: String,
+    pub value: String,
+    pub min: Option<String>,
+    pub max: Option<String>,
+    pub step: Option<String>,
+    pub options: Vec<ProjectPropertyOption>,
+}
+
 pub struct AppState {
     pub root: PathBuf,
     pub engine_bin: String,
@@ -54,5 +74,6 @@ pub struct AppState {
     pub engine_ld_library_path: Option<String>,
     pub settings: Settings,
     pub wallpapers: Vec<WallpaperEntry>,
+    pub project_overrides: HashMap<String, HashMap<String, String>>,
     pub active_engine_pid: Option<u32>,
 }

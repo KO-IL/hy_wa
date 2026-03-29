@@ -11,6 +11,7 @@ use std::{
 
 use crate::{
     model::{AppState, MediaKind},
+    properties::append_project_overrides,
     scanner::{classify_target, resolve_project_dir},
 };
 
@@ -133,6 +134,7 @@ fn run_wallpaperengine(state: &mut AppState, wallpaper: &str) -> i32 {
     let output = state.settings.output.trim();
     let mut cmd = Command::new(&state.resolved_engine_bin);
     cmd.args(["--screen-root", output, "--bg", wallpaper, "--fps", "60"]);
+    append_project_overrides(state, wallpaper, &mut cmd);
     if let Some(workdir) = &state.engine_workdir {
         cmd.current_dir(workdir);
     }

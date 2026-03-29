@@ -11,11 +11,13 @@ use std::{
 use crate::{
     config::save_settings,
     constants::{DEFAULT_OUTPUT, SERVER_ADDR},
-    model::AppState,
+    model::{AppState, MediaKind, ProjectProperty},
     paths::canonicalize_directory,
-    scanner::{resolve_allowed_media_path, scan_wallpapers},
+    properties::list_project_properties,
+    scanner::{classify_target, resolve_allowed_media_path, resolve_project_dir, scan_wallpapers},
     state_ops::apply_and_save,
     text::{json_escape, url_decode},
+    wallpaper::apply_wallpaper,
 };
 
 const PAGE_HTML: &str = include_str!("page.html");
@@ -191,6 +193,8 @@ fn handle_connection(mut stream: TcpStream, shared: Arc<Mutex<AppState>>) -> std
                 .map_err(|_| std::io::Error::other("state lock poisoned"))?;
             serve_media_file(&mut stream, &guard, path_value)
         }
+        "/api/properties" => handle_properties(&mut stream, &shared, &params),
+        "/api/set_property" => handle_set_property(&mut stream, &shared, &params),
         "/api/volume" => handle_volume(&mut stream, &params),
         _ => write_text_response(&mut stream, "404 Not Found", "Not found."),
     }
@@ -242,6 +246,157 @@ fn split_target(target: &str) -> (&str, &str) {
     match target.split_once('?') {
         Some((path, query)) => (path, query),
         None => (target, ""),
+    }
+}
+
+fn handle_properties(
+    stream: &mut TcpStream,
+    shared: &Arc<Mutex<AppState>>,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let Some(path_value) = params.get("path") else {
+        return write_text_response(stream, "400 Bad Request", "Missing path.");
+    };
+
+    let guard = shared
+        .lock()
+        .map_err(|_| io::Error::other("state lock poisoned"))?;
+    let Some(allowed) = resolve_allowed_media_path(&guard.root, Path::new(path_value)) else {
+        return write_text_response(stream, "400 Bad Request", "Unsupported path.");
+    };
+    let allowed_string = allowed.to_string_lossy().to_string();
+    let kind = classify_target(&allowed);
+    let project_dir = resolve_project_dir(&allowed).unwrap_or_else(|| allowed_string.clone());
+    let properties = if kind == MediaKind::Project {
+        list_project_properties(&guard, &allowed_string)?
+    } else {
+        Vec::new()
+    };
+    drop(guard);
+
+    let body = build_properties_json(&allowed_string, &project_dir, kind, &properties);
+    write_text_response(stream, "200 OK", &body)
+}
+
+fn handle_set_property(
+    stream: &mut TcpStream,
+    shared: &Arc<Mutex<AppState>>,
+    params: &HashMap<String, String>,
+) -> io::Result<()> {
+    let Some(path_value) = params.get("path") else {
+        return write_text_response(stream, "400 Bad Request", "Missing path.");
+    };
+    let Some(key) = params.get("key") else {
+        return write_text_response(stream, "400 Bad Request", "Missing key.");
+    };
+    let Some(value) = params.get("value") else {
+        return write_text_response(stream, "400 Bad Request", "Missing value.");
+    };
+
+    let mut guard = shared
+        .lock()
+        .map_err(|_| io::Error::other("state lock poisoned"))?;
+    let Some(allowed) = resolve_allowed_media_path(&guard.root, Path::new(path_value)) else {
+        return write_text_response(stream, "400 Bad Request", "Unsupported path.");
+    };
+    if classify_target(&allowed) != MediaKind::Project {
+        return write_text_response(
+            stream,
+            "400 Bad Request",
+            "Properties are only available for Wallpaper Engine projects.",
+        );
+    }
+
+    let Some(project_dir) = resolve_project_dir(&allowed) else {
+        return write_text_response(stream, "400 Bad Request", "Invalid project path.");
+    };
+
+    guard
+        .project_overrides
+        .entry(project_dir.clone())
+        .or_default()
+        .insert(key.clone(), value.clone());
+    guard
+        .settings
+        .project_overrides
+        .entry(project_dir.clone())
+        .or_default()
+        .insert(key.clone(), value.clone());
+    let settings = guard.settings.clone();
+
+    if let Some(last) = guard.settings.last_wallpaper.clone() {
+        let last_project = resolve_project_dir(Path::new(&last)).unwrap_or(last);
+        if last_project == project_dir {
+            let _ = apply_wallpaper(&mut guard, &project_dir);
+        }
+    }
+
+    let properties = list_project_properties(&guard, &project_dir)?;
+    let body = build_properties_json(&project_dir, &project_dir, MediaKind::Project, &properties);
+    drop(guard);
+    let _ = save_settings(&settings);
+    write_text_response(stream, "200 OK", &body)
+}
+
+fn build_properties_json(
+    path: &str,
+    project_dir: &str,
+    kind: MediaKind,
+    properties: &[ProjectProperty],
+) -> String {
+    let mut body = String::new();
+    body.push('{');
+    body.push_str("\"path\":\"");
+    body.push_str(&json_escape(path));
+    body.push_str("\",\"projectDir\":\"");
+    body.push_str(&json_escape(project_dir));
+    body.push_str("\",\"kind\":\"");
+    body.push_str(kind.as_str());
+    body.push_str("\",\"properties\":[");
+    for (index, property) in properties.iter().enumerate() {
+        if index > 0 {
+            body.push(',');
+        }
+        body.push('{');
+        body.push_str("\"key\":\"");
+        body.push_str(&json_escape(&property.key));
+        body.push_str("\",\"label\":\"");
+        body.push_str(&json_escape(&property.label));
+        body.push_str("\",\"kind\":\"");
+        body.push_str(&json_escape(&property.kind));
+        body.push_str("\",\"value\":\"");
+        body.push_str(&json_escape(&property.value));
+        body.push_str("\",\"min\":");
+        push_optional_json_string(&mut body, property.min.as_deref());
+        body.push_str(",\"max\":");
+        push_optional_json_string(&mut body, property.max.as_deref());
+        body.push_str(",\"step\":");
+        push_optional_json_string(&mut body, property.step.as_deref());
+        body.push_str(",\"options\":[");
+        for (option_index, option) in property.options.iter().enumerate() {
+            if option_index > 0 {
+                body.push(',');
+            }
+            body.push('{');
+            body.push_str("\"value\":\"");
+            body.push_str(&json_escape(&option.value));
+            body.push_str("\",\"label\":\"");
+            body.push_str(&json_escape(&option.label));
+            body.push_str("\"}");
+        }
+        body.push_str("]}");
+    }
+    body.push_str("]}");
+    body
+}
+
+fn push_optional_json_string(body: &mut String, value: Option<&str>) {
+    if let Some(value) = value {
+        body.push('"');
+        body.push_str(&json_escape(value));
+        body.push('"');
+    } else {
+        body.push_str("null");
     }
 }
 
